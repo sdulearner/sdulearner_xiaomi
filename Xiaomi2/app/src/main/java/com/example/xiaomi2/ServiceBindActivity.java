@@ -12,6 +12,7 @@ import android.util.Log;
 import android.widget.Button;
 import android.widget.Toast;
 
+// TODO: 2024/6/2 bindServiceActivity 启动按钮
 public class ServiceBindActivity extends AppCompatActivity {
     private static final String TAG = "ServiceBindActivity";
     private boolean mBind = false;

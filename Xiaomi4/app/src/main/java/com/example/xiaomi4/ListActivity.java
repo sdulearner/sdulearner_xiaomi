@@ -6,8 +6,10 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,6 +17,7 @@ import java.util.List;
 public class ListActivity extends AppCompatActivity {
 
     private final List<GameBean> data = new ArrayList<>();
+    private static final String TAG = "ListActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,29 +40,44 @@ public class ListActivity extends AppCompatActivity {
         recyclerView.addItemDecoration(ddecoration);
 
         //设置添加和删除
-        GameBean addGameBean = new GameBean("addItem", R.drawable.icon1, "added");
+
         Button addItem = findViewById(R.id.add);
         Button removeItem = findViewById(R.id.delete);
         EditText editText = findViewById(R.id.editTextText);
 
         addItem.setOnClickListener(v -> {
-//            if (editText.getText().length() == 0) return;
-//            int position = Integer.parseInt(editText.getText().tostring())
-            int position = 1;
-            data.add(position, addGameBean);
-            adapter.notifyItemInserted(position);//添加item
+            if (editText.getText().length() == 0) return;
+            int position = Integer.parseInt(editText.getText().toString());
+            int index = 0;
+            if (position < 1) {
+                Toast.makeText(this, "输入的数字小于1，已在第一项添加！", Toast.LENGTH_SHORT).show();
+            } else if (position > (data.size())) {
+                Toast.makeText(this, "输入的数字大于个数，已在最后一项添加！", Toast.LENGTH_SHORT).show();
+                index = data.size() - 1;
+            } else index = position - 1;
+            GameBean addGameBean = new GameBean("原神启动！"+(index+1), R.drawable.icon1, "added");
+            data.add(index, addGameBean);
+//            updateData(index, data.size());//同步更新
+            adapter.notifyItemInserted(index);//添加item
             adapter.notifyItemRangeChanged(position, data.size());
         });
 
         removeItem.setOnClickListener(v -> {
-//            if (editText.getText().length() == 0) return;
-//            int position = Integer.parseInt(editText.getText().tostring())
-            int position = 1;
-            data.remove(position);
-            adapter.notifyItemInserted(position);//添加item
-            adapter.notifyItemRangeChanged(position, data.size());
+            if (editText.getText().length() == 0) return;
+            int position = Integer.parseInt(editText.getText().toString());
+            int index = 0;
+            if (position < 1) {
+                Toast.makeText(this, "输入的数字小于1，已删除第一项！", Toast.LENGTH_SHORT).show();
+            } else if (position > (data.size())) {
+                Toast.makeText(this, "输入的数字大于个数，已删除最后一项！", Toast.LENGTH_SHORT).show();
+                index = data.size() - 1;
+            } else index = position - 1;
+            data.remove(index);
+            Log.d(TAG, "index: " + index + " size" + data.size());
+//            updateData(index, data.size());//同步更新
+            adapter.notifyItemRemoved(index);//添加item
+            adapter.notifyItemRangeChanged(index, data.size());
         });
-
     }
 
     private void setData() {
@@ -73,4 +91,17 @@ public class ListActivity extends AppCompatActivity {
             data.add(game);
         }
     }
+
+    //todo 同步更新List bug:应该使用异步任务在次方法调用结束之后再notifyItemRangeChanged
+//    private void updateData(int index, int size) {
+//        for (int i = index; i < size; i++) {
+//            Log.d(TAG, "updateData:index "+i);
+//            GameBean temp = data.get(index);
+//            GameBean game = new GameBean();
+//            game.setGameName("原神启动！" + 1);
+//            game.setGameStatus(temp.getGameStatus());
+//            game.setGameIcon(temp.getGameIcon());
+//            data.set(index, game);
+//        }
+//    }
 }

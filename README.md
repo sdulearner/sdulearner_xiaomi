@@ -373,15 +373,243 @@ public class FormFragment extends Fragment {
 
 ##### 3、在2的基础上，增加或者删除后，所有项显示的position值需要同步更新，支持用户界面指定放置位置(如果用户指定的值超过，最后一个项的位置值+1,告诉用户位置过大，小于第一个放置在第一个位置)。
 
+![动画效果](./images/Day4/Screenrecording_20240604_232642.gif "图片Title")
 
+* **目前还无法实现同步更新效果，初步判断为应该使用异步任务在updateData方法调用结束之后再notifyItemRangeChanged**
 
-* **老师我马上就写完了，请稍等片刻我会上传作业三**
+* **GameRecyclerAdapter**
 
-![动画效果](./images/Day3/Screenrecording_20240604_222045.gif "图片Title")
+  ```java
+  package com.example.xiaomi4;
+  
+  import android.view.LayoutInflater;
+  import android.view.View;
+  import android.view.ViewGroup;
+  import android.widget.Button;
+  import android.widget.ImageView;
+  import android.widget.TextView;
+  
+  import androidx.annotation.NonNull;
+  import androidx.recyclerview.widget.RecyclerView;
+  
+  import java.util.List;
+  
+  public class GameRecyclerAdapter extends RecyclerView.Adapter<GameRecyclerAdapter.ViewHolder> {
+      private final List<GameBean> data;
+  
+      //1、定义回调接口
+      public interface OnItemClickListener {
+          void onItemClick(View view, int position);
+      }
+  
+      //2、定义接口类型的变量存储数据
+      private OnItemClickListener onItemClickListener;
+  
+      //3、定义回调方法
+      public void setOnItemClickListener(OnItemClickListener onItemClickListener) {
+          this.onItemClickListener = onItemClickListener;
+      }
+  
+      public GameRecyclerAdapter(List<GameBean> data) {
+          this.data = data;
+      }
+  
+      @NonNull
+      @Override
+      public GameRecyclerAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+          // inflate item布局
+          View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_list, parent, false);
+          //创建viewHolder实例并返回
+          return new ViewHolder(view);
+      }
+  
+      @Override
+      public void onBindViewHolder(@NonNull GameRecyclerAdapter.ViewHolder holder, int position) {
+          GameBean game = data.get(position);
+          holder.mGameIcon.setImageResource(game.getGameIcon());
+          holder.mGameName.setText(game.getGameName());
+          holder.mGameButton.setText(game.getGameStatus());
+          //4、调用回调方法
+          if (onItemClickListener != null) {
+              holder.mGameButton.setOnClickListener(v -> onItemClickListener.onItemClick(v, position));
+          }
+      }
+  
+      @Override
+      public int getItemCount() {
+          return data.size();
+      }
+  
+      protected class ViewHolder extends RecyclerView.ViewHolder {
+          ImageView mGameIcon;
+          TextView mGameName;
+          Button mGameButton;
+  
+          public ViewHolder(@NonNull View itemView) {
+              super(itemView);
+              // itemView是RecyclerView的子项布局，通过它来获取控件实例
+              mGameIcon = itemView.findViewById(R.id.game_icon);
+              mGameName = itemView.findViewById(R.id.game_name);
+              mGameButton = itemView.findViewById(R.id.game_button);
+          }
+      }
+  }
+  
+  ```
 
+* **ListActivity**
 
+  ```java
+  package com.example.xiaomi4;
+  
+  import androidx.appcompat.app.AppCompatActivity;
+  import androidx.recyclerview.widget.DividerItemDecoration;
+  import androidx.recyclerview.widget.LinearLayoutManager;
+  import androidx.recyclerview.widget.RecyclerView;
+  
+  import android.os.Bundle;
+  import android.util.Log;
+  import android.widget.Button;
+  import android.widget.EditText;
+  import android.widget.Toast;
+  
+  import java.util.ArrayList;
+  import java.util.List;
+  
+  public class ListActivity extends AppCompatActivity {
+  
+      private final List<GameBean> data = new ArrayList<>();
+      private static final String TAG = "ListActivity";
+  
+      @Override
+      protected void onCreate(Bundle savedInstanceState) {
+          super.onCreate(savedInstanceState);
+          setContentView(R.layout.activity_list);
+          RecyclerView recyclerView = findViewById(R.id.recyclerview);
+          //1.准备数据
+          setData();
+          //2.获取适配器对象
+          GameRecyclerAdapter adapter = new GameRecyclerAdapter(data);
+          // 3.设置适配器
+          recyclerView.setAdapter(adapter);
+          // 4.设置布局管理器
+          LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+          layoutManager.setOrientation(LinearLayoutManager.VERTICAL);//设置布局方向
+          recyclerView.setLayoutManager(layoutManager);
+          //5.设置分割线，主义分割线方向要与布局管理器一致
+          DividerItemDecoration ddecoration = new DividerItemDecoration(this, DividerItemDecoration.VERTICAL);
+          ddecoration.setDrawable(getResources().getDrawable(R.drawable.divide_line));
+          recyclerView.addItemDecoration(ddecoration);
+  
+          //设置添加和删除
+  
+          Button addItem = findViewById(R.id.add);
+          Button removeItem = findViewById(R.id.delete);
+          EditText editText = findViewById(R.id.editTextText);
+  
+          addItem.setOnClickListener(v -> {
+              if (editText.getText().length() == 0) return;
+              int position = Integer.parseInt(editText.getText().toString());
+              int index = 0;
+              if (position < 1) {
+                  Toast.makeText(this, "输入的数字小于1，已在第一项添加！", Toast.LENGTH_SHORT).show();
+              } else if (position > (data.size())) {
+                  Toast.makeText(this, "输入的数字大于个数，已在最后一项添加！", Toast.LENGTH_SHORT).show();
+                  index = data.size() - 1;
+              } else index = position - 1;
+              GameBean addGameBean = new GameBean("原神启动！"+(index+1), R.drawable.icon1, "added");
+              data.add(index, addGameBean);
+  //            updateData(index, data.size());//同步更新
+              adapter.notifyItemInserted(index);//添加item
+              adapter.notifyItemRangeChanged(position, data.size());
+          });
+  
+          removeItem.setOnClickListener(v -> {
+              if (editText.getText().length() == 0) return;
+              int position = Integer.parseInt(editText.getText().toString());
+              int index = 0;
+              if (position < 1) {
+                  Toast.makeText(this, "输入的数字小于1，已删除第一项！", Toast.LENGTH_SHORT).show();
+              } else if (position > (data.size())) {
+                  Toast.makeText(this, "输入的数字大于个数，已删除最后一项！", Toast.LENGTH_SHORT).show();
+                  index = data.size() - 1;
+              } else index = position - 1;
+              data.remove(index);
+              Log.d(TAG, "index: " + index + " size" + data.size());
+  //            updateData(index, data.size());//同步更新
+              adapter.notifyItemRemoved(index);//添加item
+              adapter.notifyItemRangeChanged(index, data.size());
+          });
+      }
+  
+      private void setData() {
+          String[] gameStatus = new String[]{"开始游戏", "敬请期待", "更新", "预约"};
+          int[] icons = new int[]{R.drawable.icon1, R.drawable.icon2, R.drawable.icon3, R.drawable.genshin};
+          for (int i = 0; i < 50; i++) {
+              GameBean game = new GameBean();
+              game.setGameName("原神启动！" + (i + 1));
+              game.setGameStatus(gameStatus[i % 4]);
+              game.setGameIcon(icons[i % 4]);
+              data.add(game);
+          }
+      }
+  
+      //todo 同步更新List bug:应该使用异步任务在次方法调用结束之后再notifyItemRangeChanged
+  //    private void updateData(int index, int size) {
+  //        for (int i = index; i < size; i++) {
+  //            Log.d(TAG, "updateData:index "+i);
+  //            GameBean temp = data.get(index);
+  //            GameBean game = new GameBean();
+  //            game.setGameName("原神启动！" + 1);
+  //            game.setGameStatus(temp.getGameStatus());
+  //            game.setGameIcon(temp.getGameIcon());
+  //            data.set(index, game);
+  //        }
+  //    }
+  }
+  ```
+
+* **item_list.xml**
+
+  ```xml
+  <?xml version="1.0" encoding="utf-8"?>
+  <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+      xmlns:app="http://schemas.android.com/apk/res-auto"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content">
+  
+      <ImageView
+          android:id="@+id/game_icon"
+          android:layout_width="50dp"
+          android:layout_height="50dp"
+          app:layout_constraintStart_toStartOf="parent"
+          app:srcCompat="@android:drawable/editbox_background" />
+  
+      <TextView
+          android:id="@+id/game_name"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:gravity="center"
+          app:layout_constraintBottom_toBottomOf="parent"
+          app:layout_constraintStart_toStartOf="parent"
+          app:layout_constraintEnd_toEndOf="parent"
+          app:layout_constraintTop_toTopOf="parent"
+          android:layout_marginLeft="-100dp"/>
+  
+      <Button
+          android:id="@+id/game_button"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          app:layout_constraintEnd_toEndOf="parent"
+          app:layout_constraintStart_toEndOf="@id/game_name" />
+  </androidx.constraintlayout.widget.ConstraintLayout>
+  ```
+
+  
 
 ##### 4、富文本与SeekBar
+
+![动画效果](./images/Day4/Screenrecording_20240604_232731.gif "图片Title")
 
 
 

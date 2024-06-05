@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">Xiaomi5</string>
+    <string-array name="language_array">
+        <item>简体中文</item>
+        <item>English</item>
+        <item>西八语</item>
+        <item>八嘎语</item>
+    </string-array>
+    <string-array name="button_array">
+        <item>button1</item>
+        <item>button2</item>
+        <item>button3</item>
+        <item>button4</item>
+        <item>button5</item>
+        <item>button6</item>
+    </string-array>
+</resources>

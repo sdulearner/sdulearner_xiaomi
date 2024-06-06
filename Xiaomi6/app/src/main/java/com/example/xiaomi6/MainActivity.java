@@ -110,12 +110,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // TODO: 2024/6/6 stiky粘性EventBus
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onMsgEvent(MessageEvent message) {
-        Log.e(TAG, "onMsgEvent: " + message.getMessage());
-        runOnUiThread(() -> {
-            mResult.setText(message.getMessage());
-        });
+//    @Subscribe(threadMode = ThreadMode.MAIN)
+//    public void onMsgEvent(MessageEvent message) {
+//        Log.e(TAG, "onMsgEvent: " + message.getMessage());
+//        runOnUiThread(() -> {
+//            mResult.setText(message.getMessage());
+//        });
 //        mResult.setText(message.getMessage());
-    }
+//    }
 }

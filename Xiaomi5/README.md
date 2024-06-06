@@ -2,15 +2,15 @@
 
 ##### 1、正常写出UI图
 
-![小米账号帮助中心](./images/Day5/Screenrecording_20240605_223022.gif "小米账号帮助中心")
+![小米账号帮助中心](../images/Day5/Screenrecording_20240605_223022.gif "小米账号帮助中心")
 
 ##### 2、使用最少布局层级实现，查看页面过度绘制，尽量优化代码层级结构，提供过度绘制截图
 
-<img src="./images/Day5/Screenshot_20240605_223538.jpg" alt="过度绘制截图" title="过度绘制截图" style="zoom:50%;" />
+<img src="../images/Day5/Screenshot_20240605_223538.jpg" alt="过度绘制截图" title="过度绘制截图" style="zoom:50%;" />
 
 ##### 3.使用include优化布局代码，减少xml代码量
 
-![布局截图](./images/Day5/Snipaste_2024-06-05_22-46-02.png "布局截图")
+![布局截图](../images/Day5/Snipaste_2024-06-05_22-46-02.png "布局截图")
 
 * **activity_main.xml**
 

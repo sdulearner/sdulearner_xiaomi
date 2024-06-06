@@ -1,12 +1,10 @@
 package com.example.xiaomi6;
 
-import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.chad.library.adapter.base.BaseQuickAdapter;
@@ -25,6 +23,12 @@ public class HomeAdapter extends BaseQuickAdapter<HomeItem, BaseViewHolder> impl
     }
 
     @Override
+    public void onBindViewHolder(@NonNull BaseViewHolder holder, int position) {
+
+        super.onBindViewHolder(holder, position);
+    }
+
+    @Override
     protected void convert(@NonNull BaseViewHolder baseViewHolder, HomeItem homeItem) {
 //        baseViewHolder.setText(R.id.big_text, homeItem.getTitle());
 //        baseViewHolder.setImageResource(R.id.big_icon, homeItem.getImageResource());
@@ -36,5 +40,6 @@ public class HomeAdapter extends BaseQuickAdapter<HomeItem, BaseViewHolder> impl
                 .into(imageView);
         textView.setText(homeItem.getTitle());
     }
+
 
 }

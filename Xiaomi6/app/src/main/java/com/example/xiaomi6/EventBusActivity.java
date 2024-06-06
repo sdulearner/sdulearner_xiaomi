@@ -18,7 +18,7 @@ public class EventBusActivity extends AppCompatActivity {
         send.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                EventBus.getDefault().post(new MessageEvent("雷总牛逼！！！"));
+//                EventBus.getDefault().post(new MessageEvent("雷总牛逼！！！"));
             }
         });
     }

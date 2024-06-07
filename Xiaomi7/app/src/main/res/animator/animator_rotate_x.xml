@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<objectAnimator xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="@integer/anim_1000"
+    android:propertyName="rotationX"
+    android:startOffset="@integer/anim_1000"
+    android:valueFrom="0"
+    android:valueTo="360"
+    android:valueType="floatType">
+
+</objectAnimator>

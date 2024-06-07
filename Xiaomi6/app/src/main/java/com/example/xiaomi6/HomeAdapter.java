@@ -39,7 +39,9 @@ public class HomeAdapter extends BaseQuickAdapter<HomeItem, BaseViewHolder> impl
                 .load(homeItem.getImageResource())
                 .into(imageView);
         textView.setText(homeItem.getTitle());
+        TextView big_like = baseViewHolder.getView(R.id.big_like);
+        if (homeItem.isLike())
+            big_like.setBackgroundResource(R.drawable.like_fill);
+        else big_like.setBackgroundResource(R.drawable.like);
     }
-
-
 }

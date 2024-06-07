@@ -102,14 +102,11 @@ public class HomeFragment extends Fragment {
                     startActivity(intent);
                 } else if (viewId == R.id.big_like) {//点赞
                     if (click_data.isLike()) {//如果点击之前是喜欢则设为不喜欢
-                        view.setBackground(ContextCompat.getDrawable(view.getContext(), R.drawable.like));
                         data.set(position, new HomeItem(click_data.getTitle(), click_data.getImageResource(), false));
                     } else {
-                        view.setBackground(ContextCompat.getDrawable(view.getContext(), R.drawable.like_fill));
                         data.set(position, new HomeItem(click_data.getTitle(), click_data.getImageResource(), true));
                     }
                     Log.e(TAG, "data.get(position).isLike(): " + data.get(position).isLike());
-                    // TODO: 2024/6/6 下面这行代码没有效果 why
                     mAdapter.notifyDataSetChanged();
                 } else Log.e(TAG, "viewid:" + viewId);
             }
@@ -166,39 +163,13 @@ public class HomeFragment extends Fragment {
         EventBus.getDefault().unregister(this);
     }
 
-    //响应EventBus todo:界面无法更新，notifyDataSetChanged没用
+    //响应EventBus todo:bug修复完毕（界面无法更新，notifyDataSetChanged没用 ）
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onMsgEvent(MessageEvent message) {
         Log.e(TAG, "onMsgEvent: " + message.getPosition() + message.isLike());
         HomeItem click_data = data.get(message.getPosition());
         data.set(message.getPosition(), new HomeItem(click_data.getTitle(), click_data.getImageResource(), message.isLike()));
-        new Handler().postDelayed(new Runnable() {
-            @SuppressLint("NotifyDataSetChanged")
-            @Override
-            public void run() {
-//                mAdapter.notifyDataSetChanged();
-//                mAdapter.setNewData(data);
-//                mAdapter.setNewInstance(data);
-//                mAdapter.notifyItemChanged(message.getPosition());
-            }
-        }, 0);
-        getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                mAdapter.setList(data);
-                mAdapter.notifyDataSetChanged();
-            }
-        });
+        mAdapter.notifyDataSetChanged();
     }
 
-    @Override
-    public void onResume() {
-        super.onResume();
-        getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                mAdapter.setNewInstance(data);
-            }
-        });
-    }
 }

@@ -27,12 +27,15 @@ import android.widget.TextView;
 
 public class FrameAnimCodeSampleActivity extends AppCompatActivity {
     private static final String TAG = "FrameAnimCodeSampleActivity";
+    private int repeatCount;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_frame_anim_code_sample);
+
         ImageView imageView = findViewById(R.id.imageView);
+        TextView textView = findViewById(R.id.textView);
 
         //通过资源文件方式展示帧动画
 //        imageView.setImageResource(R.drawable.drawable_run_anim);
@@ -93,35 +96,34 @@ public class FrameAnimCodeSampleActivity extends AppCompatActivity {
         //组合动画
 //        Animation animation = AnimationUtils.loadAnimation(this, R.anim.anim_set);
 //        imageView.startAnimation(animation);
-        AnimationSet animationSet = new AnimationSet(true);
-        ScaleAnimation scaleAnimation = new ScaleAnimation(1f, 1.2f, 1f, 1.2f,
-                Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
-        RotateAnimation rotateAnimation = new RotateAnimation(0f, 180f,
-                Animation.RELATIVE_TO_SELF, 0.5f,
-                Animation.RELATIVE_TO_SELF, 0.5f);
-        AlphaAnimation alphaAnimation = new AlphaAnimation(0f, 1f);
-        animationSet.addAnimation(scaleAnimation);
-        animationSet.addAnimation(rotateAnimation);
-        animationSet.setDuration(2000);
-        imageView.startAnimation(animationSet);
-        animationSet.setAnimationListener(new Animation.AnimationListener() {
-            @Override
-            public void onAnimationStart(Animation animation) {
-                Log.e(TAG, "onAnimationStart: ");
-            }
-
-            @Override
-            public void onAnimationEnd(Animation animation) {
-                Log.e(TAG, "onAnimationEnd: ");
-            }
-
-            @Override
-            public void onAnimationRepeat(Animation animation) {
-                Log.e(TAG, "onAnimationRepeat: ");
-            }
-        });
+//        AnimationSet animationSet = new AnimationSet(true);
+//        ScaleAnimation scaleAnimation = new ScaleAnimation(1f, 1.2f, 1f, 1.2f,
+//                Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
+//        RotateAnimation rotateAnimation = new RotateAnimation(0f, 180f,
+//                Animation.RELATIVE_TO_SELF, 0.5f,
+//                Animation.RELATIVE_TO_SELF, 0.5f);
+//        AlphaAnimation alphaAnimation = new AlphaAnimation(0f, 1f);
+//        animationSet.addAnimation(scaleAnimation);
+//        animationSet.addAnimation(rotateAnimation);
+//        animationSet.setDuration(2000);
+//        imageView.startAnimation(animationSet);
+//        animationSet.setAnimationListener(new Animation.AnimationListener() {
+//            @Override
+//            public void onAnimationStart(Animation animation) {
+//                Log.e(TAG, "onAnimationStart: ");
+//            }
+//
+//            @Override
+//            public void onAnimationEnd(Animation animation) {
+//                Log.e(TAG, "onAnimationEnd: ");
+//            }
+//
+//            @Override
+//            public void onAnimationRepeat(Animation animation) {
+//                Log.e(TAG, "onAnimationRepeat: ");
+//            }
+//        });
         //属性动画
-        TextView textView = findViewById(R.id.textView);
 //        ObjectAnimator objectAnimator = (ObjectAnimator) AnimatorInflater.loadAnimator(this, R.animator.animator_rotate_x);
 //        objectAnimator.setTarget(textView);
 //        objectAnimator.start();
@@ -167,10 +169,60 @@ public class FrameAnimCodeSampleActivity extends AppCompatActivity {
 //                .start();
 
         //Evaluator
-        ObjectAnimator objectAnimator = ObjectAnimator.ofInt(textView, "backgroundColor", Color.parseColor("#009688"), Color.RED);
-        //平滑过渡背景色
-        objectAnimator.setEvaluator(new ArgbEvaluator());
-        objectAnimator.setDuration(10000);
-        objectAnimator.start();
+//        ObjectAnimator objectAnimator = ObjectAnimator.ofInt(textView, "backgroundColor", Color.parseColor("#009688"), Color.RED);
+//        //平滑过渡背景色
+//        objectAnimator.setEvaluator(new ArgbEvaluator());
+//        objectAnimator.setDuration(10000);
+//        objectAnimator.start();
+
+        //1、基于当前 vew 中心点放大1.5倍，同时逆时针旋转720度，由不透明变为透明度0.8，持续2000ms，并且重复动画3次
+        AnimationSet animationSet = (AnimationSet) AnimationUtils.loadAnimation(this, R.anim.anim_set);
+        repeatCount = 1;
+        animationSet.setDuration(2000);
+        //重复播放动画3次，由于AnimationSet本身并不直接支持setRepeatCount()方法，所以为每个子动画设置重复次数
+        for (Animation anim : animationSet.getAnimations()) {
+            anim.setRepeatCount(3);
+            anim.setRepeatMode(Animation.RESTART); // 每次重复重新播放动画
+        }
+        imageView.startAnimation(animationSet);
+        //打印日志
+        animationSet.getAnimations().get(0).setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {
+                Log.e(TAG, "onAnimationStart: ");
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                Log.e(TAG, "onAnimationEnd: ");
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+                Log.e(TAG, "onAnimationRepeat:" + (repeatCount += 1));
+            }
+        });
+        //实现属性动画，使用 AnimatorSet，先是当前 View围绕X轴旋转 360 度，持续1000ms；然后向右移动120px，持续1000ms;
+        // 最后从不透明变成透明度0.5，持续500ms。(要求:使用Java方式实现，需要有2个基础动画同时执行，有1个顺序执行，
+        // 且实现至少2种不同效果的自定义插值器与估值器)
+
+        AnimatorSet animatorSet = new AnimatorSet();
+        ObjectAnimator rotationXAnimator = ObjectAnimator.ofFloat(textView, View.ROTATION_X, 0f, 360f);
+        //设置自定义的Evaluator
+        rotationXAnimator.setDuration(1000).setEvaluator(new MyCustomEvaluator());
+
+        ObjectAnimator translateXAnimator = ObjectAnimator.ofFloat(textView, View.TRANSLATION_X, 0f, 120f);
+        translateXAnimator.setDuration(1000);
+
+        ObjectAnimator alphaAnimator = ObjectAnimator.ofFloat(textView, View.ALPHA, 1.0f, 0.5f);
+        alphaAnimator.setDuration(500);
+        //设置旋转和平移同时执行
+        animatorSet.playTogether(rotationXAnimator, translateXAnimator);
+        //设置透明度变化在平移后执行
+        animatorSet.play(alphaAnimator).after(translateXAnimator);
+        //设置自定义的Interpolator
+        animatorSet.setInterpolator(new MyCustomInterpolator());
+        animatorSet.start();
+
     }
 }

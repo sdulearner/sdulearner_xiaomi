@@ -5,20 +5,27 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".FrameAnimCodeSampleActivity">
-
-
     <ImageView
         android:id="@+id/imageView"
-        android:layout_width="wrap_content"
-        android:visibility="gone"
-        android:layout_height="wrap_content"
-        app:srcCompat="@drawable/android_icon" />
+        android:layout_width="0dp"
+        android:layout_height="300dp"
+        app:layout_constraintBottom_toTopOf="@+id/textView"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="spread"
+        app:srcCompat="@drawable/ojbk" />
+
     <TextView
         android:id="@+id/textView"
-        android:layout_width="400dp"
-        android:layout_height="400dp"
+        android:layout_width="251dp"
+        android:layout_height="251dp"
+        android:background="@color/purple"
+        android:gravity="center"
         android:text="雷总牛逼！！！"
         android:textColor="@color/white"
-        android:gravity="center"
-        android:background="@color/purple"/>
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/imageView" />
 </androidx.constraintlayout.widget.ConstraintLayout>

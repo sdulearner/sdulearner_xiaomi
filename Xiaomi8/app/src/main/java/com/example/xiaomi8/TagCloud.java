@@ -125,7 +125,7 @@ public class TagCloud extends FrameLayout {
     }
 
     // 测量每个子View的位置
-    List<Location> locations ;
+    List<Location> locations;
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
@@ -166,7 +166,7 @@ public class TagCloud extends FrameLayout {
         int height = 0; // 当前高度坐标 Y轴
         int remainWidth = 0; // 保持宽度坐标 X轴
         int top = 0; // 顶部 Y轴
-        lo= new ArrayList<>()
+        locations = new ArrayList<>();
         //遍历全部子View
         for (int i = 0; i < getChildCount(); i++) {
             // 将测量要求传给子View
@@ -178,10 +178,10 @@ public class TagCloud extends FrameLayout {
             // 新起一行
             if (height == 0 || remainWidth + mHorizontalMargin + child.getMeasuredWidth() > widthSpecSize) {
                 // locations添加第一个
-                if (height == 0)
-                    locations.add(new Location(0, 0,
-                            ((int) mHorizontalMargin + child.getMeasuredWidth()) / 2,
-                            (int) mVerticalMargin + child.getMeasuredHeight()));
+//                if (height == 0)
+//                    locations.add(new Location(0, 0,
+//                            ((int) mHorizontalMargin + child.getMeasuredWidth()) / 2,
+//                            (int) mVerticalMargin + child.getMeasuredHeight()));
                 t = height + (int) mVerticalMargin;
                 top = t;
 
@@ -194,7 +194,7 @@ public class TagCloud extends FrameLayout {
                 remainWidth += child.getMeasuredWidth();
                 r = remainWidth;
 
-//                else locations.add()
+
             } else {
                 //每行的后几个
                 t = top;//复用刚才记录下来的 top
@@ -205,6 +205,7 @@ public class TagCloud extends FrameLayout {
             }
             // 记录下在当前子View里面，等下用
             Location location = new Location(l, t, r, b);
+            locations.add(new Location(l, t, (r + l) / 2, b));
             child.setTag(location);
         }
         setMeasuredDimension(widthSpecSize, heightSpecSize);
@@ -285,6 +286,7 @@ public class TagCloud extends FrameLayout {
     // 手指按下时播放动画
     private void select(View view, int index) {
         mSelectView = view;
+        i_select = index;//当前被选中iew的id
         ScaleAnimation scaleAnimation = new ScaleAnimation(1f, 1.2f,
                 1f, 1.2f,
                 Animation.RELATIVE_TO_SELF, 0.5f,
@@ -301,29 +303,62 @@ public class TagCloud extends FrameLayout {
     }
 
     // 手指松开时取消动画并复原位置
+    private float l_select;
+    private float t_select;
+    private float r_select;
+    private float b_select;
+    private int i_select;//当前被选中iew的id
+
     private void release() {
         if (mSelectView != null) {
             mSelectView.clearAnimation();
-            mSelectView.setTranslationX(0);
-            mSelectView.setTranslationY(0);
-            //
-            activePointerId = -1;
-            nextPointerId = -1;
-            //判断换位置
+//            //
+//            TagCloud release方法
+//            判断换位置
             Log.i(TAG, "release: " + locations.toString());
             for (int i = 0; i < locations.size(); i++) {
                 Location location = locations.get(i);
                 Log.i(TAG, "release: location" + location.toString());
                 if (location.getL() <= activePointerX && activePointerX < location.getR() && location.getT() <= activePointerY && activePointerY < location.getB()) {
-                    Log.i(TAG, "release: swap");
-                    String temp = mTags.get(i);
-                    mTags.remove(i);
+                    String temp = mTags.get(i_select);
+                    mTags.remove(i_select);
                     mTags.add(i, temp);
+                    Log.i(TAG, "release: swap");
+                    setTags(mTags);
+//                    requestLayout();
                     break;
                 }
             }
-            setTags(mTags);
+
+//            // da
+//            for (int i = 0; i < getChildCount() - 1; i++) {
+//                View view_front = getChildAt(i);
+//                View view_back = getChildAt(i + 1);
+//                float l = view_front.getLeft();
+//                float r = view_back.getRight();
+//                float t = view_front.getTop();
+//                float b = view_front.getBottom();
+//                if (l <= activePointerX && activePointerX < r
+//                        && t <= activePointerY && activePointerY < b) {
+//                    Log.d(TAG, "swap");
+//                    removeView(mSelectView);
+//                    for (int j = i_select + 1; j < i + 1; j++) {
+//                        View view_change = getChildAt(j);
+//                        view_change.setId(j - 1);
+//                    }
+//                    addView(mSelectView, i);
+//                    mSelectView.setId(i);
+//                    // 请求重新布局子视图
+//                    requestLayout();
+//                    break; //
+//                }
+//            }
+            activePointerId = -1;
+            nextPointerId = -1;
+            mSelectView.setTranslationX(0);
+            mSelectView.setTranslationY(0);
         }
+//        setTags(mTags);
         mSelectView = null;//将选中的子View设为null，避免滑动空白处也能移动
     }
 

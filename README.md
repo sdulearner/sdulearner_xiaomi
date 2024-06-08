@@ -4,7 +4,7 @@
 
 [sdulearner-Day8.apk](Xiaomi8/app/release/sdulearner-Day8.apk)
 
-<img src="./images/Day8/Screen_recording_20240607_213739.gif" alt="属性动画" title="属性动画" style="zoom:50%;"/>
+<img src="./images/Day8/Screenrecording_20240608_233829.gif" alt="补间动画" title="补间动画" style="zoom:50%;"/>
 
 ##### 1、完成“标签云”控件，包括自定义属性
 
@@ -410,8 +410,25 @@
 
 ##### 4、实现拖拽后可调整标签的位置
 
-* **老师我还在写这部分的代码，马上就好**
+* **实现效果(拖拽到其他子View的前半部分可以调整位置)**
 
-* **实现效果**
+  ```java
+  //            判断换位置
+              Log.i(TAG, "release: " + locations.toString());
+              for (int i = 0; i < locations.size(); i++) {
+                  Location location = locations.get(i);
+                  Log.i(TAG, "release: location" + location.toString());
+                  if (location.getL() <= activePointerX && activePointerX < location.getR() && location.getT() <= activePointerY && activePointerY < location.getB()) {
+                      String temp = mTags.get(i_select);
+                      mTags.remove(i_select);
+                      mTags.add(i, temp);
+                      Log.i(TAG, "release: swap");
+                      setTags(mTags);
+                      break;
+                  }
+              }
+  ```
 
-<img src="./images/Day8/Screen_recording_20240607_210206.gif" alt="补间动画" title="补间动画" style="zoom:50%;"/>
+  
+
+<img src="./images/Day8/Screenrecording_20240608_233829.gif" alt="补间动画" title="补间动画" style="zoom:50%;"/>

@@ -1,45 +1,301 @@
-# Day8
+# Day9
+
+#### 完成搜索功能，将搜索结果使用列表展示，支持页面下拉刷新和上拉加载更多；使用OkHttp或Retrofit方式进行网络请求
+
+
 
 #### 效果展示
 
-[sdulearner-Day8.apk](Xiaomi8/app/release/sdulearner-Day8.apk)
+<img src="./images/Day9/Homework.gif" alt="游戏搜索" title="游戏搜索" style="zoom:50%;"/>
 
-<img src="./images/Day8/Screenrecording_20240608_233829.gif" alt="补间动画" title="补间动画" style="zoom:50%;"/>
+[sdulearner-Day9.apk](Xiaomi9/app/release/sdulearner-Day9.apk)
 
-##### 1、完成“标签云”控件，包括自定义属性
 
-* **新建TagCloud类继承FrameLayout，编写setTags(List<String> tags)方法来加载TagCloud**
+
+##### 1、通过向服务器发送请求得知返回的参数主要有：游戏Id、游戏名称gameName、游戏图标icon、游戏介绍introduction、游戏简介brief、游戏版本versionName、安装包路径apkUrl、游戏标签tags、游戏评分score、玩家数playNumFormat、创建时间createTime![Response](./images/Day9/Snipaste_2024-06-09_18-22-11.png "Response")
+
+* **新建CommonData类**
 
   ```java
-      public void setTags(List<String> tags) {
-          if (this.mTags != tags) {
-              mTags = tags;
-              int tagCount = mTags != null ? mTags.size() : 0;//获取总标签数
-              int childCount = getChildCount();// 获取现有的子View数
-              if (tagCount > childCount) {// 总标签数大于子View数，向后追加
-                  for (int i = childCount; i < tagCount; i++) {
-                      TextView child = new TextView(getContext());
-                      child.setTextSize(25);//字体大小
-                      child.setMaxLines(1);//最多一行
-                      child.setEllipsize(TextUtils.TruncateAt.END);//截断方式
-                      child.setBackgroundColor(R.color.sky_blue);//背景色
-                      addView(child, i);//添加子View
+  public class CommonData<T> {
+      public int code;
+      public String msg;
+      public T data;
   
-                  }
-              } else if (tagCount < childCount) {//标签数量小于子View数量，移出
-                  for (int i = childCount; i > tagCount; i--) {
-                      removeViewAt(childCount);
-                  }
-              }
-              for (int i = 0; i < getChildCount(); i++) {
-                  ((TextView) getChildAt(i)).setText(mTags.get(i));//设置text
+      public String toString() {
+          return "CommonData:" +
+                  "code=" + code +
+                  ", msg=" + msg + "\n" +
+                  ", data:" + data;
+      }
+  }
+  ```
+
+* **新建GameItem类，包含上述主要参数**
+
+  ```java
+  public class GameItem {
+      @Override
+      public String toString() {
+          return "GameItem{" +
+                  "gameId=" + id +
+                  ", gameName='" + gameName + '\'' +
+                  ", icon='" + icon + '\'' +
+                  ", introduction='" + introduction + '\'' +
+                  ", brief='" + brief + '\'' +
+                  ", versionName='" + versionName + '\'' +
+                  ", apkUrl='" + apkUrl + '\'' +
+                  ", tags='" + tags + '\'' +
+                  ", score=" + score +
+                  ", playNumFormat='" + playNumFormat + '\'' +
+                  ", createTime='" + createTime + '\'' +
+                  "}\n";
+      }
   
-              }
-          }
+      private int id;
+      private String gameName;
+      private String icon;
+      private String introduction;
+      private String brief;
+      private String versionName;
+      private String apkUrl;
+      private String tags;
+      private float score;
+      private String playNumFormat;
+      private String createTime;
+  
+      // Getters and Setters
+  	······
+  }
+  ```
+
+* <img src="./images/Day9/20240609192442.png" alt="Response" title="Response" style="zoom:50%;"/>
+
+* **新建DataItem类，包含上述data字段的信息**
+
+  ```java
+  public class DataItem {
+      private List<GameItem> records;
+      private int total;
+      private int size;
+      private int current;
+      private boolean searchCount;
+      private int pages;
+  
+      @Override
+      public String toString() {
+          return "DataItem{" +
+                  "records=" + records +
+                  ", total=" + total +
+                  ", size=" + size +
+                  ", current=" + current +
+                  ", searchCount=" + searchCount +
+                  ", pages=" + pages +
+                  '}';
+      }
+          // Getters and Setters
+  	······
+  }
+  ```
+
+  
+
+##### 2、使用Retrofit方式进行网络请求并打印日志
+
+* **在NetworkActivity中实现ApiService接口**
+
+  ```java
+      public interface ApiService {
+          // 根据Id查找游戏
+          @GET("/quick-game/game/{id}")
+          retrofit2.Call<CommonData<GameItem>> queryGame(@Path("id") String id);
+  
+          // 搜索游戏
+          @GET("/quick-game/game/search")
+          @Headers("Content-Type: application/json")
+          retrofit2.Call<CommonData<DataItem>> queryGames(
+                  @Query("search") String search, // 搜索内容
+                  @Query("current") int current, // 当前页，默认1
+                  @Query("size") int size // 当前页大小，默认10
+          );
       }
   ```
 
-* **在activity_main.xml文件中添加TagCloud控件**
+* **NetworkActivity中相关变量**
+
+  ```java
+  	private final OkHttpClient okHttpClient = new OkHttpClient.Builder().build();
+      private static final MediaType jsonType = MediaType.parse("application/json;charset=utf-8");
+      private final Gson gson = new Gson();
+      private final Handler handler = new Handler(Looper.getMainLooper()) {
+          @Override
+          public void handleMessage(@NonNull Message msg) {
+              super.handleMessage(msg);
+              if (msg.what == 1) textBody.setText((CharSequence) msg.obj);
+          }
+      };
+      private final Retrofit retrofit = new Retrofit.Builder()
+              .baseUrl("https://hotfix-service-prod.g.mi.com")
+              .client(okHttpClient)
+              .addConverterFactory(GsonConverterFactory.create(gson))
+              .build();
+      private final ApiService apiService = retrofit.create(ApiService.class);
+      private static final String TAG = "NetworkActivity";
+      private TextView textBody;
+  ```
+
+* **在NetworkActivity中编写retrofitGet()方法实现HTTP GET请求并打印日志**
+
+  ```java
+      private void retrofitGet() {
+          // 搜索游戏
+          retrofit2.Call<CommonData<DataItem>> queryGamesCall = apiService.queryGames(search, current, size);
+          // 搜索游戏
+          queryGamesCall.enqueue(new retrofit2.Callback<CommonData<DataItem>>() {
+              @Override
+              public void onResponse(retrofit2.Call<CommonData<DataItem>> call, retrofit2.Response<CommonData<DataItem>> response) {
+                  CommonData<DataItem> body = response.body();
+                  // 使用Handler可以实现异步更新View
+                  handler.post(new Runnable() {
+                      @Override
+                      public void run() {
+  //                        textBody.setText(body.toString());
+                          Log.i(TAG, "queryGames: " + body);
+                      }
+                  });
+              }
+  
+              @Override
+              public void onFailure(retrofit2.Call<CommonData<DataItem>> call, Throwable t) {
+                  Log.e(TAG, "retrofitGet onFailure.");
+              }
+          });
+      }
+  ```
+
+* **实现效果**
+
+  <img src="./images/Day9/QQ-20240609193946.png" alt="SearchGames" title="SearchGames" style="zoom:50%;"/>
+
+  
+
+##### 3、实现搜索框和列表展示
+
+* **HomeAdapter.java**
+
+  ```java
+  public class HomeAdapter extends BaseQuickAdapter<HomeItem, BaseViewHolder> implements LoadMoreModule {
+      public HomeAdapter(int layoutResId, @Nullable List<HomeItem> data) {
+          super(layoutResId, data);
+      }
+  
+      public HomeAdapter(int layoutResId) {
+          super(layoutResId);
+      }
+  
+      @Override
+      public void onBindViewHolder(@NonNull BaseViewHolder holder, int position) {
+          super.onBindViewHolder(holder, position);
+      }
+  
+      @Override
+      protected void convert(@NonNull BaseViewHolder baseViewHolder, HomeItem homeItem) {
+          //加载更多1:实现LoadMoreModule
+          // 加载游戏图标
+          ImageView game_icon = baseViewHolder.getView(R.id.game_icon);
+          Glide.with(game_icon.getContext())
+                  .load(homeItem.getIcon())
+                  .into(game_icon);
+  
+          // 加载中间的游戏名和评分
+          TextView gameName = baseViewHolder.getView(R.id.gameName);
+          // TODO: 2024/6/9 用富文本调整评分的字体（字体调小，变成蓝色）
+          gameName.setText(homeItem.getGameName() + "★" + homeItem.getScore());
+          // 加载简介
+          TextView brief = baseViewHolder.getView(R.id.brief);
+          brief.setText(homeItem.getBrief());
+  
+          // 为安装按钮设置点击事件
+          Button game_button = baseViewHolder.getView(R.id.game_button);
+          game_button.setOnClickListener(v -> {
+              // 创建Intent意图，动作是ACTION_VIEW，数据是网址的Uri
+              Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(homeItem.getApkUrl()));
+              baseViewHolder.itemView.getContext().startActivity(intent);
+          });
+      }
+  }
+  ```
+
+* **列表项的布局big_button.xml**
+
+  ```xml
+  <?xml version="1.0" encoding="utf-8"?>
+  <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+      xmlns:app="http://schemas.android.com/apk/res-auto"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginVertical="10dp"
+      android:layout_marginStart="15dp"
+      android:layout_marginEnd="15dp">
+  
+      <ImageView
+          android:id="@+id/game_icon"
+          android:layout_width="50dp"
+          android:layout_height="50dp"
+          app:layout_constraintBottom_toBottomOf="parent"
+          app:layout_constraintEnd_toStartOf="@+id/constraint1"
+          app:layout_constraintHorizontal_chainStyle="spread_inside"
+          app:layout_constraintStart_toStartOf="parent"
+          app:layout_constraintTop_toTopOf="parent"
+          app:srcCompat="@android:drawable/editbox_background" />
+  
+      <androidx.constraintlayout.widget.ConstraintLayout
+          android:id="@+id/constraint1"
+          android:layout_width="wrap_content"
+          android:layout_height="75dp"
+          app:layout_constraintBottom_toBottomOf="parent"
+          app:layout_constraintEnd_toStartOf="@+id/game_button"
+          app:layout_constraintStart_toEndOf="@+id/game_icon"
+          app:layout_constraintTop_toTopOf="parent">
+  
+          <TextView
+              android:id="@+id/gameName"
+              android:layout_width="wrap_content"
+              android:layout_height="0dp"
+              android:gravity="center"
+              app:layout_constraintBottom_toTopOf="@+id/brief"
+              app:layout_constraintEnd_toEndOf="parent"
+              app:layout_constraintStart_toStartOf="parent"
+              app:layout_constraintTop_toTopOf="parent"
+              app:layout_constraintVertical_chainStyle="packed" />
+  
+          <TextView
+              android:id="@+id/brief"
+              android:layout_width="180dp"
+              android:layout_height="0dp"
+              android:gravity="center"
+              android:textColor="@color/gray1"
+              android:textSize="12sp"
+              app:layout_constraintBottom_toBottomOf="parent"
+              app:layout_constraintEnd_toEndOf="parent"
+              app:layout_constraintStart_toStartOf="parent"
+              app:layout_constraintTop_toBottomOf="@+id/gameName" />
+      </androidx.constraintlayout.widget.ConstraintLayout>
+  
+      <Button
+          android:id="@+id/game_button"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:text="安装"
+          app:layout_constraintBottom_toBottomOf="parent"
+          app:layout_constraintEnd_toEndOf="parent"
+          app:layout_constraintStart_toEndOf="@id/constraint1"
+          app:layout_constraintTop_toTopOf="parent" />
+  
+  </androidx.constraintlayout.widget.ConstraintLayout>
+  ```
+
+* **NetWorkActivity的布局文件**
 
   ```xml
   <?xml version="1.0" encoding="utf-8"?>
@@ -48,387 +304,250 @@
       xmlns:tools="http://schemas.android.com/tools"
       android:layout_width="match_parent"
       android:layout_height="match_parent"
-      tools:context=".MainActivity">
+      tools:context=".activity.NetworkActivity">
   
-      <com.example.xiaomi8.TagCloud
-          android:id="@+id/edit"
-          android:layout_width="match_parent"
+      <SearchView
+          android:id="@+id/searchView"
+          android:layout_width="0dp"
           android:layout_height="wrap_content"
-          android:background="@null"
-          android:gravity="top"
-          app:hMargin="15dp"
-          app:vMargin="10dp" />
+          android:layout_marginStart="15dp"
+          android:layout_marginEnd="15dp"
+          android:background="@drawable/rounded_background"
+          android:iconifiedByDefault="false"
+          android:paddingEnd="10dp"
+          android:queryHint="请输入游戏关键词"
+          app:layout_constraintBottom_toTopOf="@+id/fragment_container_view"
+          app:layout_constraintEnd_toEndOf="parent"
+          app:layout_constraintStart_toStartOf="parent"
+          app:layout_constraintTop_toTopOf="parent" />
   
+      <FrameLayout
+          android:id="@+id/fragment_container_view"
+          android:layout_width="match_parent"
+          android:layout_height="0dp"
+          app:layout_constraintBottom_toBottomOf="parent"
+          app:layout_constraintEnd_toEndOf="parent"
+          app:layout_constraintStart_toStartOf="parent"
+          app:layout_constraintTop_toBottomOf="@id/searchView">
+  
+          <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+              android:id="@+id/swipe_layout"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              tools:context=".RefreshActivity">
+  
+              <androidx.recyclerview.widget.RecyclerView
+                  android:id="@+id/recyclerview"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  app:layout_constraintEnd_toEndOf="parent"
+                  app:layout_constraintStart_toStartOf="parent" />
+  
+          </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+      </FrameLayout>
   </androidx.constraintlayout.widget.ConstraintLayout>
   ```
-
-* **MainActivity中添加Tag**
-
-  ```java
-  List<String> t = new ArrayList<>();
-          t.add("优秀的公司赚取利润");
-          t.add("伟大的公司赢得人心");
-          t.add("1999交个朋友");
-          t.add("雷总牛逼！！！");
-          t.add("Are you OK?");
-          t.add("永远相信美好的事情即将发生");
-          t.add("干翻友商！");
-          t.add("小米2代！屌爆了！");
-          ((TagCloud) findViewById(R.id.edit)).setTags(t);
-  ```
-
-* **在TagCloud.java中编写onMeasure和onLayout方法**
+  
+* **OnCreate中初始化数据并设置下拉刷新和上拉加载的监听**
 
   ```java
-      // 测量每个子View的位置
-      @Override
-      protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-          //  传入宽度测量模式和尺寸
-          int widthSpecMode = MeasureSpec.getMode(widthMeasureSpec);
-          int widthSpecSize = MeasureSpec.getSize(widthMeasureSpec);
-          //  传入高度的测量模式和尺寸
-          int heightSpecMode = MeasureSpec.getMode(heightMeasureSpec);
-          int heightSpecSize = MeasureSpec.getSize(heightMeasureSpec);
-          Log.i(TAG, "widthSpecSize: " + widthSpecSize + " heightSpecSize:" + heightSpecSize);
-          //  设置子View的宽度
-          int childWidthSpec;
-          switch (widthSpecMode) {
-              case MeasureSpec.AT_MOST:
-              case MeasureSpec.EXACTLY:
-                  // 计算需要传给子View的 MeasureSpec
-                  childWidthSpec = MeasureSpec.makeMeasureSpec(widthSpecSize - ((int) mHorizontalMargin * 2), MeasureSpec.AT_MOST);
-                  break;
-              case MeasureSpec.UNSPECIFIED:
-              default:
-                  childWidthSpec = widthMeasureSpec;
-                  break;
-          }
-          //  设置子View的高度
-          int childHeightSpec;
-          switch (heightSpecMode) {
-              case MeasureSpec.AT_MOST:
-              case MeasureSpec.EXACTLY:
-                  // 计算需要传给子View的 MeasureSpec
-                  childHeightSpec = MeasureSpec.makeMeasureSpec(heightSpecSize - ((int) mVerticalMargin * 2), MeasureSpec.AT_MOST);
-                  break;
-              case MeasureSpec.UNSPECIFIED:
-              default:
-                  childHeightSpec = heightMeasureSpec;
-                  break;
-          }
+      protected void onCreate(Bundle savedInstanceState) {
+          super.onCreate(savedInstanceState);
+          setContentView(R.layout.activity_network);
+          // 为SearchView添加监听
+          SearchView searchView = findViewById(R.id.searchView);
+          setupSearchViewListener(searchView);
   
-          //  计算l,t,r,b
-          int height = 0; // 当前高度坐标 Y轴
-          int remainWidth = 0; // 保持宽度坐标 X轴
-          int top = 0; // 顶部 Y轴
-          //遍历全部子View
-          for (int i = 0; i < getChildCount(); i++) {
-              Log.i(TAG, "childWidthSpec: " + MeasureSpec.getSize(childWidthSpec) + " childHeightSpec: " + MeasureSpec.getSize(childHeightSpec));
-              // 将测量要求传给子View
-              View child = getChildAt(i);
-              child.measure(childWidthSpec, childHeightSpec);
-              // left, top, right, bottom
-              int l, t, r, b;
-              // 第一行:height=0
-              // 新起一行
-              if (height == 0 || remainWidth + mHorizontalMargin + child.getMeasuredWidth() > widthSpecSize) {
-                  t = height + (int) mVerticalMargin;
-                  top = t;
+          // 加载数据显示在RecyclerView中
+          mRecyclerView = findViewById(R.id.recyclerview);
+          mRecyclerView.setLayoutManager(new StaggeredGridLayoutManager(1 // 显示一列
+                  , StaggeredGridLayoutManager.VERTICAL));// 垂直布局
+          data = new ArrayList<>();
+          mAdapter = new HomeAdapter(R.layout.big_button, data);
+          swipeRefreshLayout = findViewById(R.id.swipe_layout);
   
-                  height += mVerticalMargin + child.getMeasuredHeight();
-                  b = height;
-  
-                  remainWidth = (int) mHorizontalMargin;
-                  l = remainWidth;
-  
-                  remainWidth += child.getMeasuredWidth();
-                  r = remainWidth;
-              } else {
-                  //每行的后几个
-                  t = top;//复用刚才记录下来的 top
-                  b = top + child.getMeasuredHeight();//根据top计算底部坐标
-                  l = remainWidth + (int) mHorizontalMargin;//剩余宽度+margin 等于左侧左边
-                  remainWidth += mHorizontalMargin + child.getMeasuredWidth();//剩余宽度+margin+子view宽度=剩余宽度坐标
-                  r = remainWidth;
-              }
-              // 记录下在当前子View里面，等下用
-              Location location = new Location(l, t, r, b);
-              child.setTag(location);
-          }
-          setMeasuredDimension(widthSpecSize, heightSpecSize);
-  //        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-      }
-      // 遍历全部的子View，获取位置分发layout
-      @Override
-      protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
-          for (int i = 0; i < getChildCount(); i++) {
-              Log.i(TAG, "onLayout: " + i);
-              View child = getChildAt(i);
-              Location location = (Location) child.getTag();
-              child.layout(location.getL(), location.getT(), location.getR(), location.getB());
-          }
-      }
-  ```
-
-  
-
-* **实现效果**
-
-  ![TagCloud](./images/Day8/Snipaste_2024-06-08_20-00-43.png "TagCloud")
-  
-  
-  
-
-
-
-##### 2、实现View跟随手指滑动效果
-
-* **在TagCloud.java的构造方法中为mDetector设置监听器**
-
-  ```java
-  public TagCloud(@NonNull Context context, @Nullable AttributeSet attrs) {
-          super(context, attrs);
-          TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.TagCloud);
-          mHorizontalMargin = a.getDimension(R.styleable.TagCloud_hMargin, 20);
-          mVerticalMargin = a.getDimension(R.styleable.TagCloud_vMargin, 10);
-  
-          mDetector = new GestureDetector(this.getContext(), new GestureDetector.OnGestureListener() {
+          //加载更多2:在setAdapter之前 loadMore
+          mAdapter.getLoadMoreModule().setAutoLoadMore(true);
+          mAdapter.getLoadMoreModule().setEnableLoadMoreIfNotFullPage(true);
+          mAdapter.getLoadMoreModule().setOnLoadMoreListener(new OnLoadMoreListener() {
               @Override
-              public boolean onDown(@NonNull MotionEvent e) {
-  
-                  RectF r = new RectF();
-                  for (int i = 0; i < getChildCount(); i++) {
-                      View view = getChildAt(i);
-                      r.set(view.getLeft(), view.getTop(), view.getRight(), view.getBottom());
-                      if (r.contains(e.getX(), e.getY())) {
-                          select(view, i);
-                          break;
-                      }
-                  }
-                  return true;
+              public void onLoadMore() {
+                  loadMore();
               }
+          });
+          mRecyclerView.setAdapter(mAdapter);
   
+          //3.监听刷新事件
+          swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
               @Override
-              public void onShowPress(@NonNull MotionEvent e) {
-  
-              }
-  
-              @Override
-              public boolean onSingleTapUp(@NonNull MotionEvent e) {
-                  return false;
-              }
-  
-              @Override
-              public boolean onScroll(@Nullable MotionEvent e1, @NonNull MotionEvent e2, float distanceX, float distanceY) {
-                  if (mSelectView != null) {
-                      scrollSelectView(distanceX, distanceY);
-                      return true;
-                  } else {
-                      return false;
-                  }
-              }
-  
-              @Override
-              public void onLongPress(@NonNull MotionEvent e) {
-                  if (mSelectView != null) {
-                      Toast.makeText(getContext(), ((TextView) mSelectView).getText(), Toast.LENGTH_SHORT).show();
-                  }
-              }
-  
-              @Override
-              public boolean onFling(@Nullable MotionEvent e1, @NonNull MotionEvent e2, float velocityX, float velocityY) {
-                  release();
-                  return true;
+              public void onRefresh() {
+                  refreshData();
               }
           });
       }
   ```
 
-* **实现手指按下(select)、滑动(scrollSelectView)、松开(release)时的效果**
+* **设置搜索框的监听**
 
   ```java
-      // 手指按下时播放动画
-      private void select(View view, int index) {
-          mSelectView = view;
-          ScaleAnimation scaleAnimation = new ScaleAnimation(1f, 1.2f,
-                  1f, 1.2f,
-                  Animation.RELATIVE_TO_SELF, 0.5f,
-                  Animation.RELATIVE_TO_SELF, 0.5f);
-          scaleAnimation.setDuration(200);
-          scaleAnimation.setFillAfter(true);
-          view.startAnimation(scaleAnimation);
-      }
-  
-      // 手指滑动时，需要除以缩放比例
-      private void scrollSelectView(float distanceX, float distanceY) {
-          mSelectView.setTranslationX(mSelectView.getTranslationX() - distanceX * 5 / 6);
-          mSelectView.setTranslationY(mSelectView.getTranslationY() - distanceY * 5 / 6);
-      }
-  
-      // 手指松开时取消动画并复原位置
-      private void release() {
-          if (mSelectView != null) {
-              mSelectView.clearAnimation();
-              mSelectView.setTranslationX(0);
-              mSelectView.setTranslationY(0);
-          }
-          mSelectView = null;//将选中的子View设为null，避免滑动空白处也能移动
-      }
-  ```
-
-* **设置onTouchEvent**
-
-  ```java
-      // 如果松开手指则调用release()方法，其他的情况根据mDetector的监听器执行
-      @Override
-      public boolean onTouchEvent(MotionEvent event) {
-  
-          if (event.getAction() == MotionEvent.ACTION_UP) {
-              if (mSelectView != null) {
-                  release();
-                  return true;
-              }
-          }
-          return mDetector.onTouchEvent(event);
-      }
-  ```
-
-  
-
-
-
-##### 3、在原有拖拽的基础上，新按下的手指接管并继续进行拖拽
-
-* **要实现这个效果，需要跟踪每个手指的按下和抬起事件，并维护一个状态来记录当前可以拖动的手指。维护了一个activePointerId变量来跟踪当前正在拖动的手指的ID。当有新手指按下时将其设为下一个激活的手指(nextPointerId)，当之前按下的手指抬起时将nextPointerId对应的手指设为激活状态。这样，只有第一个按下的手指能够拖动视图，直到它松开后，第二个按下的手指才能开始拖动。**
-
-* **实现效果**
-
-  <img src="./images/Day8/Screenrecording_20240608_220034.gif" alt="补间动画" title="补间动画" style="zoom:50%;"/>
-
-* **更改mDetector中的onDown方法**
-
-  ```java
-  mDetector = new GestureDetector(this.getContext(), new GestureDetector.OnGestureListener() {
+  private void setupSearchViewListener(SearchView searchView) {
+          searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
               @Override
-              public boolean onDown(@NonNull MotionEvent e) {
-                  Log.i(TAG, "onTouchEvent: ACTION_DOWN");
-                  int actionIndex = e.getActionIndex(); // 获取当前动作的索引
-                  int pointerId = e.getPointerId(actionIndex); // 获取当前动作的指针ID
-                  activePointerId = pointerId;
-                  activePointerX = e.getX(actionIndex);
-                  activePointerY = e.getY(actionIndex);
-                  RectF r = new RectF();
-                  for (int i = 0; i < getChildCount(); i++) {
-                      View view = getChildAt(i);
-                      r.set(view.getLeft(), view.getTop(), view.getRight(), view.getBottom());
-                      if (r.contains(e.getX(), e.getY())) {
-                          select(view, i);
-                          break;
-                      }
-                  }
-                  return true;
+              public boolean onQueryTextSubmit(String query) {
+                  // 用户提交了搜索请求，query参数即为搜索关键词
+                  // 在这里执行搜索逻辑
+                  search = query;
+                  retrofitGet();
+                  return true; // 返回true表示你已经处理了提交的查询，不会再有默认行为
               }
-  ```
-
-* **更改onTouchEvent方法**
-
-  ```java
-   private float activePointerX;
-      private float activePointerY;
-      private int activePointerId = -1; // 初始化为-1，表示没有手指在拖动
-      private int nextPointerId = -1; //两个手指同时按下时的第二个手指
   
-      @Override
-      public boolean onTouchEvent(MotionEvent event) {
-          int actionIndex = event.getActionIndex(); // 获取当前动作的索引
-          int action = event.getActionMasked(); // 获取动作类型
-          int pointerId = event.getPointerId(actionIndex); // 获取当前动作的指针ID
-  
-          switch (action) {
-              // 第二个手指按下
-              case MotionEvent.ACTION_POINTER_DOWN:
-                  Log.i(TAG, "onTouchEvent: ACTION_POINTER_DOWN");
-                  nextPointerId = pointerId;
-                  return true;
-  
-              case MotionEvent.ACTION_MOVE:
-                  if (activePointerId != -1 && activePointerId == pointerId) {
-                      // 只有当当前手指是激活的手指时，才允许移动
-                      float deltaX = activePointerX - event.getX(actionIndex);
-                      float deltaY = activePointerY - event.getY(actionIndex);
-                      // 移动视图
-                      if (mSelectView != null) {
-                          scrollSelectView(deltaX, deltaY);
-                          // 更新激活手指的位置
-                          activePointerX = event.getX(actionIndex);
-                          activePointerY = event.getY(actionIndex);
-                          return true;
-                      } else {
-                          return false;
-                      }
-                  }
-                  return true;
-  
-              case MotionEvent.ACTION_UP:
-                  if (mSelectView != null) {
-                      release();
-                      return true;
-                  }
-                  return true;
-              // 其中的一个手指抬起，将nextPointerId对应的手指设为激活状态
-              case MotionEvent.ACTION_POINTER_UP:
-                  if (activePointerId == pointerId) {
-                      // 如果激活的手指抬起了，激活另一个手指
-                      Log.i(TAG, "onTouchEvent: ACTION_POINTER_UP");
-                      activePointerId = nextPointerId;
-                  }
-                  return true;
-          }
-          return mDetector.onTouchEvent(event);
+              @Override
+              public boolean onQueryTextChange(String newText) {
+                  return false; // 返回false表示继续允许默认的文本变化处理
+              }
+          });
       }
   ```
 
-* **更改release方法**
+* **用retrofitGet()方法获取搜索数据**
 
   ```java
-      private void release() {
-          if (mSelectView != null) {
-              mSelectView.clearAnimation();
-              mSelectView.setTranslationX(0);
-              mSelectView.setTranslationY(0);
-              //
-              activePointerId = -1;
-              nextPointerId = -1;
-          }
-          mSelectView = null;//将选中的子View设为null，避免滑动空白处也能移动
+      // 搜索和刷新时调用，会先清空data再加进去
+      private void retrofitGet() {
+          // 搜索游戏
+          //开始刷新，设置当前为刷新状态
+          swipeRefreshLayout.setRefreshing(true);
+          data = new ArrayList<>();
+          mAdapter = new HomeAdapter(R.layout.big_button, data);
+          //加载更多2:在setAdapter之前 loadMore
+          mAdapter.getLoadMoreModule().setAutoLoadMore(true);
+          mAdapter.getLoadMoreModule().setEnableLoadMoreIfNotFullPage(true);
+          mAdapter.getLoadMoreModule().setOnLoadMoreListener(new OnLoadMoreListener() {
+              @Override
+              public void onLoadMore() {
+                  loadMore();
+              }
+          });
+          mRecyclerView.setAdapter(mAdapter);
+          //这里是主线程
+          //一些比较耗时的操作，比如联网获取数据，需要放到子线程执行
+          mAdapter.getLoadMoreModule().setAutoLoadMore(true);
+          // 重置上拉刷新和current
+          mIsLoadEnd = false;
+          current = 1;
+          retrofit2.Call<CommonData<DataItem>> queryGamesCall = apiService.queryGames(search, current, size);
+          // 搜索游戏
+          queryGamesCall.enqueue(new retrofit2.Callback<CommonData<DataItem>>() {
+              @Override
+              public void onResponse(retrofit2.Call<CommonData<DataItem>> call, retrofit2.Response<CommonData<DataItem>> response) {
+                  CommonData<DataItem> body = response.body();
+                  // 使用Handler可以实现异步更新View
+                  handler.post(new Runnable() {
+                      @Override
+                      public void run() {
+  //                        textBody.setText(body.toString());
+  //                        Log.i(TAG, "queryGames: " + body);
+                          // 获取data字段，data中含有游戏列表records
+                          DataItem dataItem = body.getData();
+                          if (body != null) {
+                              List<GameItem> gameItems = dataItem.getRecords();
+  //                            Log.i(TAG, "gameItems: " + gameItems);
+                              data.clear();//清空data
+                              if (gameItems.size() == 0)
+                                  Toast.makeText(NetworkActivity.this, "搜索结果为空", Toast.LENGTH_SHORT).show();
+                              // 将列表需要展示的信息加入HomeItem
+                              for (int i = 0; i < gameItems.size(); i++) {
+                                  GameItem gameItem = gameItems.get(i);
+                                  data.add(new HomeItem(gameItem.getIcon(), gameItem.getGameName(), gameItem.getScore(), gameItem.getBrief(), gameItem.getApkUrl()));
+                              }
+  
+                          } else {
+                              Toast.makeText(NetworkActivity.this, "搜索结果为空", Toast.LENGTH_SHORT).show();
+                          }
+                          // 更新列表
+                          mAdapter.notifyDataSetChanged();
+                          // 加载完数据设置为不刷新状态，将下拉进度收起来
+                          swipeRefreshLayout.setRefreshing(false);
+                      }
+                  });
+              }
+  
+              @Override
+              public void onFailure(retrofit2.Call<CommonData<DataItem>> call, Throwable t) {
+                  Log.e(TAG, "retrofitGet onFailure.");
+              }
+          });
       }
   ```
 
-* **试了一下如果手指个数超过两个（三个及以上）就无法实现相应的效果，改进的话可以考虑用栈来实现。**
-
-  
-
-##### 4、实现拖拽后可调整标签的位置
-
-* **实现效果(拖拽到其他子View的前半部分可以调整位置)**
+* **用retrofitAdd()方法加载更多数据**
 
   ```java
-  //            判断换位置
-              Log.i(TAG, "release: " + locations.toString());
-              for (int i = 0; i < locations.size(); i++) {
-                  Location location = locations.get(i);
-                  Log.i(TAG, "release: location" + location.toString());
-                  if (location.getL() <= activePointerX && activePointerX < location.getR() && location.getT() <= activePointerY && activePointerY < location.getB()) {
-                      String temp = mTags.get(i_select);
-                      mTags.remove(i_select);
-                      mTags.add(i, temp);
-                      Log.i(TAG, "release: swap");
-                      setTags(mTags);
-                      break;
-                  }
+      private void retrofitAdd() {
+           // 加载更多
+          retrofit2.Call<CommonData<DataItem>> queryGamesCall = apiService.queryGames(search, ++current, size);
+          queryGamesCall.enqueue(new retrofit2.Callback<CommonData<DataItem>>() {
+              @Override
+              public void onResponse(retrofit2.Call<CommonData<DataItem>> call, retrofit2.Response<CommonData<DataItem>> response) {
+                  CommonData<DataItem> body = response.body();
+                  // 使用Handler可以实现异步更新View
+                  handler.post(new Runnable() {
+                      @Override
+                      public void run() {
+                          // 获取data字段，data中含有游戏列表records
+                          DataItem dataItem = body.getData();
+                          List<GameItem> gameItems = dataItem.getRecords();
+                          // 将列表需要展示的信息加入HomeItem
+                          for (int i = 0; i < gameItems.size(); i++) {
+                              GameItem gameItem = gameItems.get(i);
+                              data.add(new HomeItem(gameItem.getIcon(), gameItem.getGameName(), gameItem.getScore(), gameItem.getBrief(), gameItem.getApkUrl()));
+                          }
+                          // 更新列表
+                          mAdapter.notifyDataSetChanged();
+                          // 全部加载完则停止上拉加载
+                          if (dataItem.getTotal() < current * size)
+                              mIsLoadEnd = true;
+                      }
+                  });
               }
+  
+              @Override
+              public void onFailure(retrofit2.Call<CommonData<DataItem>> call, Throwable t) {
+                  Log.e(TAG, "retrofitAdd onFailure.");
+              }
+          });
+  
+      }
+  ```
+
+* **loadMore()和refreshData()方法在上拉和下拉时调用**
+
+  ```java
+      //上拉加载
+      private void loadMore() {
+          Log.e(TAG, "loadMore");
+          if (mIsLoadEnd) {
+              mAdapter.getLoadMoreModule().loadMoreEnd();
+          } else {
+              mRecyclerView.postDelayed(() -> {
+                  Log.e(TAG, "loadMore success");
+                  retrofitAdd();
+                  swipeRefreshLayout.setRefreshing(false);
+                  mAdapter.getLoadMoreModule().loadMoreComplete();
+              }, 500);
+          }
+      }
+  
+      //下拉刷新
+      private void refreshData() {
+          new Handler().postDelayed(new Runnable() {
+              @SuppressLint("NotifyDataSetChanged")
+              @Override
+              public void run() {
+                  retrofitGet();
+              }
+          }, 200);
+      }
   ```
 
   
-
-<img src="./images/Day8/Screenrecording_20240608_233829.gif" alt="补间动画" title="补间动画" style="zoom:50%;"/>

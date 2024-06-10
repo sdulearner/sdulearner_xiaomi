@@ -27,6 +27,7 @@ import com.example.xiaomi9.entity.CommonData;
 import com.example.xiaomi9.entity.DataItem;
 import com.example.xiaomi9.entity.GameItem;
 import com.example.xiaomi9.entity.HomeItem;
+import com.github.anrwatchdog.ANRWatchDog;
 import com.google.gson.Gson;
 
 import java.io.IOException;
@@ -281,7 +282,6 @@ public class NetworkActivity extends AppCompatActivity {
                 Log.e(TAG, "retrofitGet onFailure.");
             }
         });
-
     }
 
     // 加载更多时调用

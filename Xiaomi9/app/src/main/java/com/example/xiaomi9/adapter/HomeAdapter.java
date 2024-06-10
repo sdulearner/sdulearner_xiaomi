@@ -1,7 +1,10 @@
 package com.example.xiaomi9.adapter;
 
+import android.app.DownloadManager;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Environment;
 import android.text.TextUtils;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -10,6 +13,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 
 import com.bumptech.glide.Glide;
 import com.chad.library.adapter.base.BaseQuickAdapter;
@@ -56,8 +60,21 @@ public class HomeAdapter extends BaseQuickAdapter<HomeItem, BaseViewHolder> impl
         Button game_button = baseViewHolder.getView(R.id.game_button);
         game_button.setOnClickListener(v -> {
             // 创建Intent意图，动作是ACTION_VIEW，数据是网址的Uri
-            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(homeItem.getApkUrl()));
-            baseViewHolder.itemView.getContext().startActivity(intent);
+//            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(homeItem.getApkUrl()));
+//            baseViewHolder.itemView.getContext().startActivity(intent);
+
+            // 调用此方法开始下载
+            DownloadManager downloadManager = (DownloadManager) baseViewHolder.itemView.getContext().getSystemService(Context.DOWNLOAD_SERVICE);
+            DownloadManager.Request request = new DownloadManager.Request(Uri.parse(homeItem.getApkUrl()));
+
+            // 设置下载目录、文件名（可选）、通知栏显示信息等
+            request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, homeItem.getGameName() + ".apk");// 需要根据实际情况设定文件名和扩展名
+            request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+            request.setTitle("下载中");
+
+            // enqueue把请求放入下载队列，系统会处理下载过程
+            downloadManager.enqueue(request);
+
             // 确保有应用能处理这个Intent
 //            if (intent.resolveActivity(baseViewHolder.itemView.getContext().getPackageManager()) != null) {
 //                // 启动Intent，这将打开系统的默认浏览器并加载指定的网址
@@ -68,4 +85,6 @@ public class HomeAdapter extends BaseQuickAdapter<HomeItem, BaseViewHolder> impl
 //            }
         });
     }
+
+
 }

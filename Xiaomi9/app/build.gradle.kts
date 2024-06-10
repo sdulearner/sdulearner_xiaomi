@@ -46,4 +46,8 @@ dependencies {
     // 引用BaseRecyclerViewAdapterHelper和swiperefreshlayout
     implementation("io.github.cymchad:BaseRecyclerViewAdapterHelper:3.0.14")
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
+    // 引用leakcanary
+    debugImplementation("com.squareup.leakcanary:leakcanary-android:2.12")
+    // 引用ANR-WatchDog
+    implementation("com.github.anrwatchdog:anrwatchdog:1.4.0")
 }

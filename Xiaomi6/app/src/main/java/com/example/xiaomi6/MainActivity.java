@@ -32,9 +32,9 @@ import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
-    private TextView mResult;
     private HomeFragment homeFragment;
     private MyPageFragment myPageFragment;
+    private TextView mResult;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

@@ -13,7 +13,7 @@ public class MyPageFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        //         Inflate the layout for this fragment
+        // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.my_page, container, false);
         return view;
     }

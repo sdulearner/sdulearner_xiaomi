@@ -36,7 +36,7 @@
         android:layout_height="wrap_content"
         android:ems="10"
         android:hint="电话(仅限数字)"
-        android:inputType="numberPassword"
+        android:inputType="number"
         app:layout_constraintBottom_toTopOf="@id/choose_gender"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

@@ -8,4 +8,4 @@
 
 * **实践项目地址**
 
-[weibo_sdulearner](https://github.com/sdulearner/weibo_sdulearner)
+  [weibo_sdulearner](https://github.com/sdulearner/weibo_sdulearner)

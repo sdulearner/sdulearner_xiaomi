@@ -20,21 +20,21 @@ singleInstance：单实例模式，这是一种加强型的singleTask模式，�
 
 **Service生命周期**
 
-<img src="./images/Day2/20180703002615794.png" alt="Service生命周期"  />
+<img src="../images/Day2/20180703002615794.png" alt="Service生命周期"  />
 
 
 
 **AIDL跨进程算数**
 
-<img src="./images/Day2/Screenshot_20240602220104.png" alt="AIDL跨进程算数" style="zoom:50%;" />
+<img src="../images/Day2/Screenshot_20240602220104.png" alt="AIDL跨进程算数" style="zoom:50%;" />
 
 
 
 **ContentProvider获取通讯录**
 
-<img src="./images/Day2/Screenshot_20240602211747.png" alt="ContentProvider获取通讯录" style="zoom:50%;" />
+<img src="../images/Day2/Screenshot_20240602211747.png" alt="ContentProvider获取通讯录" style="zoom:50%;" />
 
-<img src="./images/Day2/Screenshot_20240602213632.png" alt="ContentProvider获取通讯录" style="zoom:50%;" />
+<img src="../images/Day2/Screenshot_20240602213632.png" alt="ContentProvider获取通讯录" style="zoom:50%;" />
 
 
 
